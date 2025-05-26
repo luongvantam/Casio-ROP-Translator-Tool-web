@@ -44,4 +44,3 @@ Once the translator is open in your browser:
 * **Errors:**
     * "Translation not found": Gadget not found in target ROM.
     * "Error: Please run via local server and check files!": Files not loaded correctly (usually due to not running via server).
-* This project is licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
