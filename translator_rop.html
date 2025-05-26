@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translator ROP</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #0053a6;
+            color: white;
+            padding: 10px 0;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        main {
+            width: 90%;
+            max-width: 700px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .content h2 {
+            color: #0053a6;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .content div {
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="file"],
+        textarea {
+            width: calc(100% - 12px);
+            padding: 8px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #2e86de;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #2e86de;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        #fileStatus {
+            font-style: italic;
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .text-box {
+            background-color: #eee;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            min-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: monospace;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="content">
+            <h2>Dịch ROP</h2>
+            <div>
+                <label>Chọn File Dịch Từ:</label>
+                <input type="file" id="fileFrom" accept=".txt" onchange="loadFile(event, 'source')">
+            </div>
+            <div>
+                <label>Chọn File Dịch Đến:</label>
+                <input type="file" id="fileTo" accept=".txt" onchange="loadFile(event, 'target')">
+            </div>
+            <div>
+                <p id="fileStatus">Vui lòng tải lên các file dịch.</p>
+                </div>
+            <div>
+                <label>Nhập:</label>
+                <textarea id="gadgetInput" rows="5"></textarea>
+            </div>
+            <button id="translateBtn" disabled>Dịch</button>
+            <hr><br>
+            <h2>Kết Quả:</h2>
+            <div class="text-box" style="text-align: left; height: 300px;">
+                <pre id="outputText"></pre>
+            </div>
+        </div>
+
+        <script>
+            let fileData = {
+                source: null,
+                target: null
+            };
+            const statusMessage = document.getElementById("fileStatus");
+            const translateButton = document.getElementById("translateBtn");
+
+            function loadFile(event, type) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        fileData[type] = e.target.result.split("\n").filter(line => line.trim());
+                        checkTranslationReadiness();
+                    };
+                    reader.readAsText(file);
+                    statusMessage.textContent = `Đã tải ${file.name} cho ${type === 'source' ? 'file nguồn' : 'file đích'}.`;
+                } else {
+                    fileData[type] = null;
+                    checkTranslationReadiness();
+                }
+            }
+
+            function checkTranslationReadiness() {
+                if (fileData.source && fileData.target) {
+                    translateButton.disabled = false;
+                    statusMessage.textContent = "Đã sẵn sàng dịch.";
+                } else {
+                    translateButton.disabled = true;
+                    statusMessage.textContent = "Vui lòng tải lên cả hai file dịch.";
+                }
+            }
+
+            function translateMain(targetModel, sourceModel, searchString) {
+                let sourceIndex = -1;
+                let targetIndex;
+
+                for (let sourceLine of sourceModel) {
+                    sourceIndex++;
+                    if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                        targetIndex = -1;
+                        for (let targetLine of targetModel) {
+                            targetIndex++;
+                            try {
+                                const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                if (sourcePart === targetPart &&
+                                    sourceModel[sourceIndex-1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex-1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                    sourceModel[sourceIndex+1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex+1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                    sourceModel[sourceIndex-2]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex-2]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                    sourceModel[sourceIndex+2]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex+2]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                    return targetModel[targetIndex].slice(0, 7);
+                                }
+                            } catch (error) {
+                                console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                            }
+                        }
+                    }
+                }
+                return translateLessStrict(targetModel, sourceModel, searchString);
+            }
+
+            function translateLessStrict(targetModel, sourceModel, searchString) {
+                let sourceIndex = -1;
+                let targetIndex;
+
+                for (let sourceLine of sourceModel) {
+                    sourceIndex++;
+                    if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                        targetIndex = -1;
+                        for (let targetLine of targetModel) {
+                            targetIndex++;
+                            try {
+                                const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                if (sourcePart === targetPart &&
+                                    sourceModel[sourceIndex-1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex-1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                    sourceModel[sourceIndex+1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex+1]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                    return targetModel[targetIndex].slice(0, 7);
+                                }
+                            } catch (error) {
+                                console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                            }
+                        }
+                    }
+                }
+                return translateEvenLessStrict(targetModel, sourceModel, searchString);
+            }
+
+            function translateEvenLessStrict(targetModel, sourceModel, searchString) {
+                let sourceIndex = -1;
+                let targetIndex;
+
+                for (let sourceLine of sourceModel) {
+                    sourceIndex++;
+                    if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                        targetIndex = -1;
+                        for (let targetLine of targetModel) {
+                            targetIndex++;
+                            try {
+                                const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                if (sourcePart === targetPart &&
+                                    sourceModel[sourceIndex+1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex+1]?.split(/\s+/)[1]?.slice(0, 4) &&
+                                    sourceModel[sourceIndex+2]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex+2]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                    return targetModel[targetIndex].slice(0, 7);
+                                }
+                            } catch (error) {
+                                console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                            }
+                        }
+                    }
+                }
+                return translateMinimal(targetModel, sourceModel, searchString);
+            }
+
+            function translateMinimal(targetModel, sourceModel, searchString) {
+                let sourceIndex = -1;
+                let targetIndex;
+
+                for (let sourceLine of sourceModel) {
+                    sourceIndex++;
+                    if (sourceLine.toLowerCase().includes(searchString.toLowerCase())) {
+                        targetIndex = -1;
+                        for (let targetLine of targetModel) {
+                            targetIndex++;
+                            try {
+                                const sourcePart = sourceModel[sourceIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                const targetPart = targetModel[targetIndex].split(/\s+/)[1]?.slice(0, 4).toLowerCase() || "";
+                                if (sourcePart === targetPart &&
+                                    sourceModel[sourceIndex+1]?.split(/\s+/)[1]?.slice(0, 4) === targetModel[targetIndex+1]?.split(/\s+/)[1]?.slice(0, 4)) {
+                                    return targetModel[targetIndex].slice(0, 7);
+                                }
+                            } catch (error) {
+                                console.log(`Lỗi so sánh tại dòng ${sourceIndex}:`, error, sourceLine);
+                            }
+                        }
+                    }
+                }
+                return `Không tìm thấy bản dịch cho: ${searchString}`;
+            }
+
+            function translateLine(targetModel, sourceModel, inputLine) {
+                if (!inputLine || inputLine.trim() === "") return "";
+                if (inputLine.includes("#")) return inputLine;
+                
+                if (inputLine.includes(":")) {
+                    return translateMain(targetModel, sourceModel, inputLine);
+                }
+
+                const parts = inputLine.split(/\s+/);
+                if (parts.length < 3) return `Dòng không đúng định dạng: ${inputLine}`;
+
+                const [part1, part2, part3] = parts;
+                const secondChar = part3[1] || "";
+                const formattedLine = `${secondChar}:${part2}${part1}`;
+                
+                const result = translateMain(targetModel, sourceModel, formattedLine);
+                if (result.includes("l")) return result;
+
+                const output = `${result.slice(4, 6)} ${result.slice(2, 4)} 3${result[0] || ""} 30`;
+                return output;
+            }
+
+            translateButton.addEventListener("click", () => {
+                const sourceData = fileData.source;
+                const targetData = fileData.target;
+                const inputLines = document.getElementById("gadgetInput").value.split("\n").filter(line => line.trim());
+                const results = [];
+
+                if (!sourceData || !targetData) {
+                    document.getElementById("outputText").textContent = "Lỗi: Vui lòng tải lên cả hai file dịch trước khi dịch!";
+                    return;
+                }
+
+                for (let line of inputLines) {
+                    if (line.toLowerCase() === "end") break;
+                    const translated = translateLine(targetData, sourceData, line);
+                    if (translated) results.push(translated);
+                    console.log(`Dòng gốc: ${line}, Kết quả: ${translated}`);
+                }
+
+                document.getElementById("outputText").textContent = results.join("\n") || "Không có gì để dịch.";
+            });
+        </script>
+    </main>
+</body>
+</html>
