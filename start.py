@@ -17,9 +17,9 @@ def run_server():
     with socketserver.TCPServer(("", PORT), Handler) as httpd:
         print(f"Server đang chạy tại http://localhost:{PORT}")
         print("Mở trình duyệt của bạn và truy cập:")
-        print(f"http://localhost:{PORT}/translator_rop.html")
+        print(f"http://localhost:{PORT}/index.html")
 
-        webbrowser.open_new_tab(f"http://localhost:{PORT}/translator_rop.html")
+        webbrowser.open_new_tab(f"http://localhost:{PORT}/index.html")
 
         try:
             httpd.serve_forever()
