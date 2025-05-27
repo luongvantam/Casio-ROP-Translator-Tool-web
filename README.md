@@ -39,9 +39,9 @@ Once the translator is open in your browser:
 ## Important Notes & Licensing
 
 * **Python Requirement:** You need Python installed to run `start.py`.
-* **Try it out:** https://luongvantam.github.io/Casio-ROP-Translator-Tool-web/
 * **Data File Format:** `.txt` ROM dump files must be correctly formatted.
 * **Accuracy:** Translation accuracy depends on gadget similarity. Not 100% guaranteed.
 * **Errors:**
     * "Translation not found": Gadget not found in target ROM.
     * "Error: Please run via local server and check files!": Files not loaded correctly (usually due to not running via server).
+* **Try it out:** https://luongvantam.github.io/Casio-ROP-Translator-Tool-web/
