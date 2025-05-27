@@ -9,7 +9,7 @@ This tool allows you to translate ROP (Return-Oriented Programming) addresses be
 To run the translator, you need a local web server. The `start.py` script simplifies this process.
 
 * **Preparation:** Ensure these files are in the *same directory*:
-    * `translator_rop.html`
+    * `index.html`
     * `start.py`
     * All supported ROM dump `.txt` files (e.g., `fx991cnx.txt`, `fx580vnx.txt`,...).
 
