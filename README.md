@@ -17,7 +17,7 @@ To run the translator, you need a local web server. The `start.py` script simpli
     1.  Open your terminal or command prompt.
     2.  Navigate to the folder containing the files.
     3.  Run the Python script: `python3 start.py`
-    4.  A local web server will start (usually on `http://localhost:8000`). Your browser should automatically open `http://localhost:8000/translator_rop.html`. If not, open it manually.
+    4.  A local web server will start (usually on `http://localhost:8000`). Your browser should automatically open `http://localhost:8000/index.html`. If not, open it manually.
     5.  **Keep the terminal/command prompt open** while using the translator. Close it to stop the server.
 
 ### 2. Selecting Translation Models
