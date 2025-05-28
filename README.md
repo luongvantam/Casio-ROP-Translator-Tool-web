@@ -14,29 +14,29 @@ To run the translator, you need a local web server. The `start.py` script simpli
     * All supported ROM dump `.txt` files (e.g., `fx991cnx.txt`, `fx580vnx.txt`,...).
 
 * **Steps:**
-    1.  Open your terminal or command prompt.
+    1.  Open your terminal or cmd.
     2.  Navigate to the folder containing the files.
     3.  Run the Python script: `python3 start.py`
     4.  A local web server will start (usually on `http://localhost:8000`). Your browser should automatically open `http://localhost:8000/index.html`. If not, open it manually.
-    5.  **Keep the terminal/command prompt open** while using the translator. Close it to stop the server.
+    5.  **Keep the terminal/cmd** while using the translator. Close it to stop the server.
 
 ### 2. Selecting Translation Models
 
 Once the translator is open in your browser:
 
-* You'll see "Choose Source Translation Model" and "Choose Target Translation Model" dropdowns.
+* You'll see "Chọn File Dịch Từ" and "Chọn File Dịch Đến" dropdowns.
 * Select the models you wish to translate between.
 
 ### 3. Entering ROP Data for Translation
 
-* In the "Input" text area, enter the ROP addresses to translate.
+* In the "Nhập" field, enter the ROP address to translate.
 * Each ROP address should be on a separate line.
-* Input format can be `Offset:Gadget` (e.g., `1:7B34H`).
+* The input format is `Offset:Gadget` (e.g., `2:03D2H`).
 * Comments can be added on lines starting with `#`.
 * Type `end` on a separate line to stop processing further input.
-* Click the "Translate" button to see results in the "Result" area.
+* Click the "Dịch" button to see results in the "Kết Quả" area.
 
-## Important Notes & Licensing
+## Notes
 
 * **Python Requirement:** You need Python installed to run `start.py`.
 * **Data File Format:** `.txt` ROM dump files must be correctly formatted.
