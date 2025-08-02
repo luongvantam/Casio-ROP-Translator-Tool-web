@@ -11,7 +11,7 @@ When you open the tool in your browser, you will see two dropdown menus:
 * **"Chọn File Dịch Từ"** (Translate From): Select the `disas` file of the source model.
 * **"Chọn File Dịch Đến"** (Translate To): Select the `disas` file of the target model.
 
-> A disas file must be provided to enable translation (required in `.txt` format).
+A disas file must be provided to enable translation (required in `.txt` format).
 
 ### 2. Enter ROP Data
 
